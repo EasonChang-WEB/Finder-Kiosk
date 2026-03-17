@@ -1,0 +1,720 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>尋車查詢系統 KIOSK 測試版</title>
+  <style>
+    :root{
+      --navy:#0d2b4f;
+      --blue:#4f89a8;
+      --glass:rgba(255,255,255,.78);
+      --line:rgba(13,43,79,.18);
+      --shadow:0 18px 50px rgba(0,0,0,.12);
+      --radius:42px;
+    }
+
+    *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+    html,body{
+      margin:0;padding:0;width:100%;height:100%;
+      font-family:"Microsoft JhengHei","Noto Sans TC",sans-serif;
+      background:#e8edf0;
+      overflow:hidden;
+    }
+
+    body{
+      display:flex;align-items:center;justify-content:center;
+    }
+
+    .kiosk{
+      position:relative;
+      width:1080px;height:1920px;
+      overflow:hidden;
+      background:#f5f7f8 url('./background01.jpg') center/cover no-repeat;
+      box-shadow:0 20px 70px rgba(0,0,0,.18);
+    }
+
+    .screen{
+      position:absolute; inset:0;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      padding:88px 60px 112px;
+    }
+
+    .title{
+      width:100%;
+      text-align:center;
+      font-size:86px;
+      line-height:1.1;
+      letter-spacing:6px;
+      font-weight:900;
+      color:var(--navy);
+      margin:20px 0 42px;
+      text-shadow:0 1px 0 rgba(255,255,255,.6);
+    }
+
+    .panel{
+      width:100%;
+      border-radius:var(--radius);
+      background:linear-gradient(180deg, rgba(255,255,255,.84), rgba(255,255,255,.72));
+      backdrop-filter:blur(8px);
+      box-shadow:0 24px 60px rgba(20,43,74,.14);
+      border:1px solid rgba(255,255,255,.66);
+      padding:42px;
+      position:relative;
+      overflow:hidden;
+    }
+    .panel::before{
+      content:"";
+      position:absolute;
+      inset:-20% auto auto -8%;
+      width:360px;height:360px;
+      background:radial-gradient(circle, rgba(113,213,198,.20), rgba(113,213,198,0) 68%);
+      pointer-events:none;
+    }
+    .panel::after{
+      content:"";
+      position:absolute;
+      inset:auto -10% -14% auto;
+      width:420px;height:420px;
+      background:radial-gradient(circle, rgba(255,166,188,.16), rgba(255,166,188,0) 70%);
+      pointer-events:none;
+    }
+
+    .subtitle{
+      font-size:54px;
+      line-height:1.3;
+      font-weight:900;
+      color:var(--navy);
+      text-align:center;
+      margin:0 0 24px;
+      position:relative;
+      z-index:1;
+    }
+
+    .plate-input-wrap{width:100%;display:flex;justify-content:center;margin:18px 0 34px;}
+    .plate-input{
+      width:640px;height:120px;
+      border-radius:32px;
+      border:3px solid rgba(79,137,168,.28);
+      background:linear-gradient(180deg, rgba(255,255,255,.96), rgba(244,249,252,.90));
+      display:flex;align-items:center;justify-content:center;
+      font-size:84px;font-weight:900;letter-spacing:12px;color:#4d7b95;
+      box-shadow:inset 0 1px 0 rgba(255,255,255,.92), 0 12px 28px rgba(79,137,168,.10);
+      position:relative;
+      z-index:1;
+    }
+
+    .hint{
+      text-align:center;
+      font-size:28px;
+      color:#54697c;
+      margin-top:-10px;
+      margin-bottom:28px;
+    }
+
+    .keypad{
+      width:100%;
+      display:grid;
+      grid-template-columns:repeat(3,1fr);
+      gap:20px;
+    }
+
+    .key{
+      height:130px;
+      border:none;
+      border-radius:32px;
+      font-size:54px;
+      font-weight:900;
+      color:var(--navy);
+      background:linear-gradient(180deg, rgba(255,255,255,.98), rgba(240,246,250,.95));
+      box-shadow:0 14px 26px rgba(13,43,79,.08), inset 0 -4px 0 rgba(13,43,79,.05);
+      cursor:pointer;
+      position:relative;
+      overflow:hidden;
+    }
+    .key::before{
+      content:"";
+      position:absolute;
+      inset:0;
+      background:linear-gradient(135deg, rgba(113,213,198,.12), rgba(255,255,255,0) 60%);
+      pointer-events:none;
+    }
+
+    .key:active,.btn:active,.card:active{
+      transform:translateY(2px) scale(.995);
+    }
+
+    .key.key-confirm{
+      background:#4f89a8;
+      color:#fff;
+    }
+
+    .key.key-delete{
+      background:#dce7ee;
+    }
+
+    .cards-grid{
+      margin-top:10px;
+      display:grid;
+      grid-template-columns:repeat(2,1fr);
+      gap:22px;
+      max-height:1120px;
+      overflow:auto;
+      padding-right:4px;
+    }
+
+    .card{
+      border:none;
+      border-radius:32px;
+      background:linear-gradient(180deg, rgba(255,255,255,.98), rgba(247,250,252,.94));
+      box-shadow:0 16px 34px rgba(13,43,79,.10);
+      padding:20px;
+      cursor:pointer;
+      text-align:left;
+      position:relative;
+      overflow:hidden;
+    }
+    .card::before{
+      content:"";
+      position:absolute;
+      inset:0;
+      background:linear-gradient(145deg, rgba(114,221,204,.08), rgba(255,255,255,0) 42%, rgba(255,183,197,.08));
+      pointer-events:none;
+    }
+
+    .photo{
+      width:100%;
+      aspect-ratio:4/3;
+      border-radius:24px;
+      background:
+        linear-gradient(140deg, rgba(79,137,168,.16), rgba(255,255,255,.78)),
+        repeating-linear-gradient(135deg, rgba(79,137,168,.08), rgba(79,137,168,.08) 14px, rgba(255,255,255,.30) 14px, rgba(255,255,255,.30) 28px);
+      border:2px dashed rgba(79,137,168,.24);
+      display:flex;align-items:center;justify-content:center;
+      flex-direction:column;
+      color:#4d7b95;
+      position:relative;
+      overflow:hidden;
+      box-shadow:inset 0 0 0 1px rgba(255,255,255,.7);
+    }
+
+    .photo::after{
+      content:"車輛照片 4:3";
+      font-size:28px;
+      font-weight:800;
+      letter-spacing:2px;
+    }
+
+    .mock-plate{
+      position:absolute;
+      bottom:18px;right:18px;
+      background:rgba(255,255,255,.92);
+      color:var(--navy);
+      border-radius:12px;
+      padding:8px 12px;
+      font-size:24px;font-weight:900;
+      letter-spacing:1px;
+      border:1px solid rgba(13,43,79,.1);
+    }
+
+    .card .plate{
+      margin:16px 0 10px;
+      font-size:38px;
+      font-weight:900;
+      color:var(--navy);
+    }
+
+    .meta{
+      font-size:26px;
+      color:#4d5f70;
+      line-height:1.55;
+    }
+    .badge{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      font-size:20px;
+      font-weight:900;
+      color:#4f89a8;
+      background:rgba(79,137,168,.10);
+      padding:8px 14px;
+      border-radius:999px;
+      margin-top:12px;
+      position:relative;
+      z-index:1;
+    }
+
+    .bottom-actions{
+      display:flex;gap:18px;justify-content:center;
+      width:100%;margin-top:26px;
+    }
+
+    .btn{
+      min-width:240px;height:88px;
+      border:none;border-radius:24px;
+      font-size:34px;font-weight:900;
+      cursor:pointer;
+      box-shadow:0 10px 20px rgba(13,43,79,.08);
+      background:#fff;color:var(--navy);
+    }
+
+    .btn-primary{background:#4f89a8;color:#fff;}
+    .btn-home{background:#dbe9f1;}
+    .small-note{
+      text-align:center;
+      font-size:24px;
+      color:#5b6c7d;
+      margin-top:16px;
+    }
+
+    .result-top{
+      text-align:center;
+      font-size:34px;
+      font-weight:900;
+      color:var(--navy);
+      margin-bottom:18px;
+    }
+
+    .result-top .plate-no{
+      color:#4f89a8;
+      font-size:58px;
+      margin-right:8px;
+    }
+
+    .parking-table{
+      width:100%;
+      border-collapse:collapse;
+      overflow:hidden;
+      border-radius:18px;
+      margin-bottom:26px;
+      table-layout:fixed;
+      background:rgba(255,255,255,.6);
+    }
+    .parking-table th,.parking-table td{
+      border:2px solid rgba(0,0,0,.5);
+      text-align:center;
+    }
+    .parking-table th{
+      font-size:28px;
+      color:#495564;
+      font-weight:500;
+      padding:14px 8px;
+      background:rgba(255,255,255,.45);
+    }
+    .parking-table td{
+      font-size:98px;
+      font-weight:900;
+      color:#000;
+      padding:18px 8px;
+      line-height:1.05;
+      background:rgba(255,255,255,.18);
+    }
+
+    .map-wrap{
+      width:100%;
+      position:relative;
+      border-radius:20px;
+      overflow:hidden;
+      background:#f3f3f3;
+      box-shadow:inset 0 0 0 1px rgba(13,43,79,.12);
+    }
+
+    .map-wrap img{
+      display:block;
+      width:100%;
+      height:auto;
+    }
+
+    .pin{
+      position:absolute;
+      width:36px;height:36px;
+      transform:translate(-50%,-100%);
+      animation:blink 1s infinite ease-in-out;
+      filter:drop-shadow(0 6px 10px rgba(255,0,0,.25));
+    }
+
+    .pin::before{
+      content:"";
+      position:absolute;
+      inset:0;
+      background:#e42828;
+      border-radius:50% 50% 50% 0;
+      transform:rotate(-45deg);
+      box-shadow:0 0 0 3px rgba(255,255,255,.95);
+    }
+    .pin::after{
+      content:"";
+      position:absolute;
+      width:12px;height:12px;
+      left:12px;top:12px;
+      border-radius:50%;
+      background:#fff;
+    }
+
+    .entry-time{
+      text-align:center;
+      font-size:56px;
+      font-weight:900;
+      color:var(--navy);
+      margin-top:24px;
+    }
+
+    .idle-tag{
+      position:absolute;
+      top:24px; right:28px;
+      background:rgba(255,255,255,.72);
+      color:#48667c;
+      border:1px solid rgba(13,43,79,.1);
+      border-radius:99px;
+      padding:10px 18px;
+      font-size:22px;
+      font-weight:800;
+      box-shadow:0 6px 14px rgba(13,43,79,.06);
+    }
+
+    .footer-brand{
+      position:absolute;
+      left:0;right:0;bottom:0;
+      height:84px;
+      background:#5f8ea8;
+      display:flex;align-items:center;justify-content:center;
+      color:#fff;
+      font-size:30px;
+      font-weight:800;
+      letter-spacing:.5px;
+    }
+
+    .footer-brand span{
+      opacity:.95;
+    }
+
+    .footer-brand small{
+      font-size:18px;
+      margin-left:10px;
+      opacity:.8;
+      font-weight:600;
+    }
+
+    .hidden{display:none !important;}
+
+    @keyframes blink{
+      0%,100%{opacity:1;transform:translate(-50%,-100%) scale(1);}
+      50%{opacity:.45;transform:translate(-50%,-100%) scale(1.18);}
+    }
+
+    ::-webkit-scrollbar{width:10px;}
+    ::-webkit-scrollbar-thumb{background:rgba(79,137,168,.35);border-radius:99px;}
+    ::-webkit-scrollbar-track{background:transparent;}
+  </style>
+</head>
+<body>
+  <div class="kiosk" id="kiosk">
+    <div class="idle-tag" id="idleTag">30 秒無操作將回首頁</div>
+
+    <!-- STEP 1 -->
+    <section class="screen" id="screen-step1">
+      <div class="title">尋車查詢系統</div>
+      <div class="panel">
+        <div class="subtitle">請輸入車號（數字）</div>
+        <div class="plate-input-wrap">
+          <div class="plate-input" id="plateInput">____</div>
+        </div>
+        <div class="hint">請輸入 4 位數字，不包含英文字母</div>
+
+        <div class="keypad" id="keypad">
+          <button class="key" data-key="1">1</button>
+          <button class="key" data-key="2">2</button>
+          <button class="key" data-key="3">3</button>
+          <button class="key" data-key="4">4</button>
+          <button class="key" data-key="5">5</button>
+          <button class="key" data-key="6">6</button>
+          <button class="key" data-key="7">7</button>
+          <button class="key" data-key="8">8</button>
+          <button class="key" data-key="9">9</button>
+          <button class="key key-delete" id="btnDelete">刪除</button>
+          <button class="key" data-key="0">0</button>
+          <button class="key key-confirm" id="btnConfirm">確認</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- STEP 2 -->
+    <section class="screen hidden" id="screen-step2">
+      <div class="title">尋車查詢系統</div>
+      <div class="panel">
+        <div class="subtitle">請選擇您的愛車</div>
+        <div class="small-note" id="searchLabel">依您輸入的 4 位數字顯示所有相符車號</div>
+
+        <div class="cards-grid" id="cardsGrid"></div>
+
+        <div class="bottom-actions">
+          <button class="btn" id="backToInput">上一頁</button>
+          <button class="btn btn-home" id="homeFromList">回首頁</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- STEP 3 -->
+    <section class="screen hidden" id="screen-step3">
+      <div class="title">尋車查詢系統</div>
+      <div class="panel">
+        <div class="result-top"><span class="plate-no" id="resultPlate">AAA-1234</span> 您的愛車停放於</div>
+
+        <table class="parking-table">
+          <thead>
+            <tr>
+              <th>樓層</th>
+              <th>區域</th>
+              <th>車格</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td id="resultFloor">B1</td>
+              <td id="resultZone">B區</td>
+              <td id="resultSpot">092</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="map-wrap" id="mapWrap">
+          <img id="mapImage" src="./b1.jpg" alt="停車場平面圖" />
+          <div class="pin" id="pin"></div>
+        </div>
+
+        <div class="entry-time">入場時間：<span id="entryTime">2026/03/17 16:00</span></div>
+
+        <div class="bottom-actions" style="margin-top:28px;">
+          <button class="btn btn-home" id="homeFromResult">回首頁</button>
+        </div>
+      </div>
+    </section>
+
+    <div class="footer-brand">
+      <span>大日開發有限公司 Lucky Parking</span>
+      <small>KIOSK Demo</small>
+    </div>
+  </div>
+
+  <script>
+    const screens = {
+      step1: document.getElementById('screen-step1'),
+      step2: document.getElementById('screen-step2'),
+      step3: document.getElementById('screen-step3'),
+    };
+
+    const plateInput = document.getElementById('plateInput');
+    const btnDelete = document.getElementById('btnDelete');
+    const btnConfirm = document.getElementById('btnConfirm');
+    const keypad = document.getElementById('keypad');
+    const cardsGrid = document.getElementById('cardsGrid');
+    const searchLabel = document.getElementById('searchLabel');
+    const backToInput = document.getElementById('backToInput');
+    const homeFromList = document.getElementById('homeFromList');
+    const homeFromResult = document.getElementById('homeFromResult');
+
+    const resultPlate = document.getElementById('resultPlate');
+    const resultFloor = document.getElementById('resultFloor');
+    const resultZone = document.getElementById('resultZone');
+    const resultSpot = document.getElementById('resultSpot');
+    const mapImage = document.getElementById('mapImage');
+    const pin = document.getElementById('pin');
+    const entryTime = document.getElementById('entryTime');
+
+    let inputDigits = '';
+    let idleTimer = null;
+    let lastResults = [];
+    let selectedCar = null;
+
+    const letterPool = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    const b1Zones = ['A','B','C','D','E'];
+    const b2Zones = ['F','G','H','J','K','L']; // 依平面圖加入 J 區，避免把它當消失的樓層幽靈
+    const floorOptions = ['B1','B2'];
+
+    // 測試用定位點資料（百分比座標）
+    const spotMap = {
+      B1: [
+        { zone:'A', spot:'053', x:20, y:34 }, { zone:'A', spot:'054', x:20, y:31 }, { zone:'A', spot:'055', x:20, y:28 },
+        { zone:'B', spot:'092', x:64, y:58 }, { zone:'B', spot:'095', x:78, y:58 }, { zone:'B', spot:'101', x:74, y:23 },
+        { zone:'C', spot:'040', x:46, y:48 }, { zone:'C', spot:'048', x:43, y:68 }, { zone:'C', spot:'032', x:49, y:82 },
+        { zone:'D', spot:'024', x:56, y:48 }, { zone:'D', spot:'020', x:58, y:58 }, { zone:'D', spot:'016', x:61, y:73 },
+        { zone:'E', spot:'007', x:72, y:46 }, { zone:'E', spot:'004', x:72, y:55 }, { zone:'E', spot:'001', x:72, y:66 },
+      ],
+      B2: [
+        { zone:'F', spot:'206', x:22, y:36 }, { zone:'F', spot:'210', x:24, y:48 }, { zone:'F', spot:'200', x:18, y:16 },
+        { zone:'G', spot:'225', x:50, y:42 }, { zone:'G', spot:'229', x:60, y:44 }, { zone:'G', spot:'235', x:60, y:19 },
+        { zone:'H', spot:'243', x:75, y:48 }, { zone:'H', spot:'249', x:76, y:28 }, { zone:'H', spot:'252', x:78, y:17 },
+        { zone:'J', spot:'190', x:10, y:52 }, { zone:'J', spot:'180', x:10, y:85 }, { zone:'J', spot:'171', x:20, y:49 },
+        { zone:'K', spot:'146', x:35, y:48 }, { zone:'K', spot:'154', x:35, y:81 }, { zone:'K', spot:'137', x:53, y:80 },
+        { zone:'L', spot:'106', x:69, y:46 }, { zone:'L', spot:'118', x:60, y:59 }, { zone:'L', spot:'110', x:60, y:84 },
+      ]
+    };
+
+    function randomLetters(n){
+      let s = '';
+      for(let i=0;i<n;i++) s += letterPool[Math.floor(Math.random()*letterPool.length)];
+      return s;
+    }
+
+    function formatPlate(digits){
+      return `${randomLetters(3)}-${digits.padStart(4,'0').slice(-4)}`;
+    }
+
+    function padSpot(n){
+      return String(n).padStart(3,'0');
+    }
+
+    function randomTimeWithin3Days(){
+      const now = new Date();
+      const delta = Math.floor(Math.random() * (72 * 60 * 60 * 1000));
+      const t = new Date(now.getTime() - delta);
+      const Y = t.getFullYear();
+      const M = String(t.getMonth()+1).padStart(2,'0');
+      const D = String(t.getDate()).padStart(2,'0');
+      const h = String(t.getHours()).padStart(2,'0');
+      const m = String(t.getMinutes()).padStart(2,'0');
+      return `${Y}/${M}/${D} ${h}:${m}`;
+    }
+
+    function pickRandomParking(){
+      const floor = floorOptions[Math.floor(Math.random()*floorOptions.length)];
+      const arr = spotMap[floor];
+      const picked = arr[Math.floor(Math.random()*arr.length)];
+      return { floor, zone:picked.zone, spot:picked.spot, x:picked.x, y:picked.y };
+    }
+
+    function createMockResults(input){
+      const count = Math.max(4, Math.min(8, 4 + input.length));
+      const pool = [];
+      for(let i=0;i<count;i++){
+        const parking = pickRandomParking();
+        pool.push({
+          id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now() + i),
+          plate: formatPlate(input),
+          entryTime: randomTimeWithin3Days(),
+          floor: parking.floor,
+          zone: parking.zone,
+          spot: parking.spot,
+          x: parking.x,
+          y: parking.y
+        });
+      }
+      return pool;
+    }
+
+    function setInputDisplay(){
+      plateInput.textContent = inputDigits ? inputDigits : '____';
+      plateInput.style.color = inputDigits ? '#4f89a8' : '#89a0b0';
+    }
+
+    function showScreen(step){
+      Object.values(screens).forEach(el => el.classList.add('hidden'));
+      screens[step].classList.remove('hidden');
+      resetIdleTimer();
+    }
+
+    function goHome(){
+      inputDigits = '';
+      lastResults = [];
+      selectedCar = null;
+      setInputDisplay();
+      cardsGrid.innerHTML = '';
+      showScreen('step1');
+    }
+
+    function performSearch(){
+      if(inputDigits.length !== 4) { alert('請輸入 4 位數字'); return; }
+      lastResults = createMockResults(inputDigits);
+      searchLabel.textContent = `依「${inputDigits}」模糊搜尋，共找到 ${lastResults.length} 筆相似車號，請選擇您的愛車`;
+      cardsGrid.innerHTML = lastResults.map((car, idx) => `
+        <button class="card" data-id="${car.id}" aria-label="選擇 ${car.plate}">
+          <div class="photo">
+            <div class="mock-plate">${car.plate}</div>
+          </div>
+          <div class="plate">${car.plate}</div>
+          <div class="badge">模糊搜尋結果</div>
+          <div class="meta">入場時間：${car.entryTime}</div>
+          <div class="meta">停放樓層：${car.floor}</div>
+        </button>
+      `).join('');
+      showScreen('step2');
+    }
+
+    function renderResult(car){
+      selectedCar = car;
+      resultPlate.textContent = car.plate;
+      resultFloor.textContent = car.floor;
+      resultZone.textContent = `${car.zone}區`;
+      resultSpot.textContent = car.spot;
+      entryTime.textContent = car.entryTime;
+      mapImage.src = car.floor === 'B1' ? './b1.jpg' : './b2.jpg';
+      pin.style.left = `${car.x}%`;
+      pin.style.top = `${car.y}%`;
+      showScreen('step3');
+    }
+
+    function resetIdleTimer(){
+      clearTimeout(idleTimer);
+      idleTimer = setTimeout(goHome, 30000);
+    }
+
+    function bindGlobalActivity(){
+      ['click','touchstart','mousemove','keydown'].forEach(evt => {
+        document.addEventListener(evt, resetIdleTimer, { passive:true });
+      });
+    }
+
+    keypad.addEventListener('click', (e) => {
+      const key = e.target.dataset.key;
+      if(key !== undefined){
+        if(inputDigits.length < 4){
+          inputDigits += key;
+          setInputDisplay();
+        }
+      }
+    });
+
+    btnDelete.addEventListener('click', () => {
+      inputDigits = inputDigits.slice(0,-1);
+      setInputDisplay();
+    });
+
+    btnConfirm.addEventListener('click', () => {
+      performSearch();
+    });
+
+    backToInput.addEventListener('click', () => showScreen('step1'));
+    homeFromList.addEventListener('click', goHome);
+    homeFromResult.addEventListener('click', goHome);
+
+    cardsGrid.addEventListener('click', (e) => {
+      const card = e.target.closest('.card');
+      if(!card) return;
+      const car = lastResults.find(item => item.id === card.dataset.id);
+      if(car) renderResult(car);
+    });
+
+    document.addEventListener('keydown', (e) => {
+      if(screens.step1.classList.contains('hidden')) return;
+
+      if(/\d/.test(e.key)){
+        if(inputDigits.length < 4){
+          inputDigits += e.key;
+          setInputDisplay();
+        }
+      }else if(e.key === 'Backspace'){
+        inputDigits = inputDigits.slice(0,-1);
+        setInputDisplay();
+      }else if(e.key === 'Enter'){
+        performSearch();
+      }
+    });
+
+    setInputDisplay();
+    bindGlobalActivity();
+    resetIdleTimer();
+  </script>
+</body>
+</html>
